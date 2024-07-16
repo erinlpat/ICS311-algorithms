@@ -1,3 +1,4 @@
+// Class representing an Island
 class Island {
     constructor(name, resources = { ulu: 0, uala: 0, kalo: 0 }, population = 0, experiences = []) {
         this.name = name;
@@ -7,13 +8,16 @@ class Island {
         this.neighbors = new Map();
     }
 
+    // Method to add a neighbor island and the distance to it outside of the preset islands
     addNeighbor(neighbor, distance) {
         this.neighbors.set(neighbor, distance);
     }
 }
 
+// Class representing the Graph of islands
 class Graph {
     constructor() {
+        // Initialize islands with their respective data
         this.islands = {
             'Hawaii': new Island('Hawaii', { ulu: 0, uala: 0, kalo: 0 }, 1500, ['Surfing', 'Volcano Tours']),
             'Tahiti': new Island('Tahiti', { ulu: 0, uala: 0, kalo: 0 }, 1000, ['Pearl Diving', 'Polynesian Dance']),
@@ -23,6 +27,7 @@ class Graph {
             'Papua New Guinea': new Island('Papua New Guinea', { ulu: 100, uala: 0, kalo: 0 }, 0, []) //Origin of Ulu
         };
 
+        // Initialize distances between islands
         this.distances = {
             'Hawaii': { 'Tahiti': 10, 'Rapa Nui': 12 },
             'Tahiti': { 'Hawaii': 10, 'Rapa Nui': 8, 'Malaysia': 15, 'Papua New Guinea': 25 },
@@ -35,6 +40,7 @@ class Graph {
         this.setupConnections();
     }
 
+    // Set up connections between islands based on distances
     setupConnections() {
         for (let fromIsland in this.distances) {
             for (let toIsland in this.distances[fromIsland]) {
@@ -44,8 +50,9 @@ class Graph {
         }
     }
 
+    // Method to find the shortest path using a modified Traveling Salesperson Problem (TSP) approach
     findShortestPath(startIsland, destinations) {
-        let dp = new Map();
+        let dp = new Map(); // Dynamic programming map to store steps
 
         const tsp = (current, visited) => {
             if (visited.size === destinations.length + 1) {
@@ -56,6 +63,7 @@ class Graph {
                 return { distance: 0, path: [] };
             }
 
+            // Create a key for the current state for memoization (DP)
             let key = `${current},${Array.from(visited).sort().join()}`;
 
             if (dp.has(key)) {
@@ -65,6 +73,7 @@ class Graph {
             let minDistance = null;
             let minPath = [];
 
+            // Iterate over all neighbor islands to find shortest path
             for (let [neighbor, distance] of this.islands[current].neighbors) {
                 if (!visited.has(neighbor)) {
                     let newVisited = new Set(visited);
