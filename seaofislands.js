@@ -140,9 +140,6 @@ class Graph {
 // Example usage:
 let graph = new Graph();
 
-// Define destinations
-let destinations = ["Hawaii", "Tahiti", "Rapa Nui"];
-
 // Define resources and their origins
 let resources = {
     'uala': 'Ecuador',
