@@ -6,25 +6,25 @@ class Island {
     }
 }
 
-//sea of islands class
+//class for sea of islands
 class SeaOfIslands {
     constructor() {
         this.graph = {}; //adjacency list
         this.islands = {}; //island objects
     }
 
-    //function to add islands
+    //function to add island
     addIsland(island) {
         this.islands[island.name] = island;
         this.graph[island.name] = [];
     }
 
-    //function to add routes from island to island
+    //function to add routes
     addRoute(fromIsland, toIsland, travelTime) {
         this.graph[fromIsland].push({node: toIsland, travelTime});
     }
 
-    //function to prioritize islands based on population
+    //function to prioritize islands based on population and last visit time
     prioritizeIslands() {
         let priorityQueue = [];
         for(let islandName in this.islands) {
@@ -33,62 +33,77 @@ class SeaOfIslands {
             priorityQueue.push({islandName, priority});
         }
 
-        //sort the queue by population descending
+        //sort the queue by population descending and lastVisit ascending
         priorityQueue.sort((a,b) => {
             return b.priority.population - a.priority.population;
         });
         return priorityQueue;
     } 
 
-    //find the shortest route to visit all islands from starting island
     findRoute(startIsland) {
-        let visited = new Set();
-        let route = [startIsland];
-        visited.add(startIsland);
-        let totalTravelTime = 0;
+      let visited = new Set();
+      let route = [startIsland];
+      visited.add(startIsland);
+      let totalTravelTime = 0;
+      let currentIsland = startIsland;
 
-        while (route.length < Object.keys(this.islands).length) {
-            let currentIsland = route[route.length - 1];
-            let neighbors = this.graph[currentIsland];
-            let nextIsland = null;
-            let minTravelTime = Infinity;
+      while(route.length < Object.keys(this.islands).length) {
+        let neighbors = this.graph[currentIsland];
+        let nextIsland = null;
+        let minTravelTime = Infinity;
 
-            for (let neighbor of neighbors) {
-                if (!visited.has(neighbor.node) && neighbor.travelTime < minTravelTime) {
-                    minTravelTime = neighbor.travelTime;
-                    nextIsland = neighbor.node;
-                }
-            }
-
-            if (nextIsland) {
-                route.push(nextIsland);
-                visited.add(nextIsland);
-                totalTravelTime += minTravelTime; // Add travel time to total
-            } 
-            else {
-                break;
-            }
+        for(let neighbor of neighbors) {
+          if (!visited.has(neighbor.node) && neighbor.travelTime < minTravelTime) {
+            minTravelTime = neighbor.travelTime;
+            nextIsland = neighbor.node;
+          }
         }
-        return { route, totalTravelTime };
+
+        if(nextIsland) {
+          route.push(nextIsland);
+          visited.add(nextIsland);
+          totalTravelTime += minTravelTime; // Add travel time to total
+          currentIsland = nextIsland;
+        } 
+        else {
+            break;
+        }
     }
+
+    // Add return to start island
+    let returnRoute = route.concat([startIsland]);
+    totalTravelTime += this.graph[currentIsland].find(edge => edge.node === startIsland).travelTime;
+
+    return { route: returnRoute, totalTravelTime };
+  }
 
     //function to share knowledge across the islands
-    shareKnowledge() {
-        let priorityQueue = this.prioritizeIslands();
-        let visitedIslands = new Set();
+   shareKnowledge() {
+    let priorityQueue = this.prioritizeIslands();
+    let visitedIslands = new Set();
+    let shortestRoute = null;
 
-        while (priorityQueue.length) {
-            let { islandName } = priorityQueue.shift();
-            if (visitedIslands.has(islandName)) {
-                continue;
-            }
-            let { route, totalTravelTime } = this.findRoute(islandName);
-            //print the shortest route and its travel time
-            console.log("Shortest route to share knowledge starting from " + islandName + ":");
-            console.log(route);
-            console.log("Total travel time: " + totalTravelTime + " hours." + "\n");
+    while(priorityQueue.length) {
+        let { islandName } = priorityQueue.shift();
+        if (visitedIslands.has(islandName)) {
+            continue;
         }
+
+        let { route, totalTravelTime } = this.findRoute(islandName);
+
+        if(!shortestRoute || totalTravelTime < shortestRoute.totalTravelTime) {
+            shortestRoute = { route, totalTravelTime };
+        }
+
+        visitedIslands.add(islandName);
     }
+
+    if(shortestRoute) {
+        console.log("Shortest route to visit all islands and return to start:");
+        console.log(shortestRoute.route);
+        console.log("Total travel time: " + shortestRoute.totalTravelTime + " hours.");
+    }
+  }
 }
 
 //------testing------//
@@ -99,9 +114,7 @@ sea.addIsland(new Island("Rapa Nui", 150));
 sea.addIsland(new Island("New Zealand", 200));
 /*
 I created 4 islands:
-
 Hawaii, Tahiti, Rapa Nui, and New Zealand
-
 with different population numbers.
 */
 
