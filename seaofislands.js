@@ -108,5 +108,6 @@ let destinations = ["Hawaii", "Tahiti", "Rapa Nui"];
 // Find shortest path starting from Ecuador
 let result = graph.findShortestPath('Ecuador', destinations);
 
+console.log("Problem 3: Planting Resources");
 console.log("Shortest path distance:", result.distance);
 console.log("Shortest Route Forward and Back:", result.path.join(' -> '));
