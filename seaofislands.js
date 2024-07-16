@@ -12,6 +12,13 @@ class Island {
     addNeighbor(neighbor, distance) {
         this.neighbors.set(neighbor, distance);
     }
+
+    // Method to determine the resource requirement based on population
+    getResourceRequirement() {
+        if (this.population >= 1500) return 3;
+        if (this.population >= 1000) return 2;
+        return 1;
+    }
 }
 
 // Class representing the Graph of islands
@@ -30,11 +37,11 @@ class Graph {
         // Initialize distances between islands
         this.distances = {
             'Hawaii': { 'Tahiti': 10, 'Rapa Nui': 12 },
-            'Tahiti': { 'Hawaii': 10, 'Rapa Nui': 8, 'Malaysia': 15, 'Papua New Guinea': 25 },
-            'Rapa Nui': { 'Tahiti': 8, 'Ecuador': 20, 'Hawaii': 12 },
-            'Ecuador': { 'Rapa Nui': 20 }, 
-            'Malaysia': { 'Tahiti': 15 },
-            'Papua New Guinea': { 'Tahiti': 25 }
+            'Tahiti': { 'Hawaii': 10, 'Rapa Nui': 8 },
+            'Rapa Nui': { 'Hawaii': 12, 'Tahiti': 8 },
+            'Ecuador': { 'Hawaii': 20, 'Tahiti': 15, 'Rapa Nui': 25 },
+            'Malaysia': { 'Hawaii': 25, 'Tahiti': 15, 'Rapa Nui': 25 },
+            'Papua New Guinea': { 'Hawaii': 25, 'Tahiti': 25, 'Rapa Nui': 20 }
         };
 
         this.setupConnections();
@@ -51,10 +58,10 @@ class Graph {
     }
 
     // Method to find the shortest path using a modified Traveling Salesperson Problem (TSP) approach
-    findShortestPath(startIsland, destinations) {
+    findShortestPath(startIsland, destinations, resourceType) {
         let dp = new Map(); // Dynamic programming map to store steps
 
-        const tsp = (current, visited) => {
+        const tsp = (current, visited, currentInventory) => {
             if (visited.size === destinations.length + 1) {
                 let returnDistance = this.islands[current].neighbors.get(startIsland);
                 if (returnDistance !== undefined) {
@@ -64,7 +71,7 @@ class Graph {
             }
 
             // Create a key for the current state for memoization (DP)
-            let key = `${current},${Array.from(visited).sort().join()}`;
+            let key = `${current},${Array.from(visited).sort().join()},${currentInventory}`;
 
             if (dp.has(key)) {
                 return dp.get(key);
@@ -78,12 +85,31 @@ class Graph {
                 if (!visited.has(neighbor)) {
                     let newVisited = new Set(visited);
                     newVisited.add(neighbor);
-                    let result = tsp(neighbor, newVisited);
-                    let pathDistance = distance + result.distance;
+
+                    let resourceRequirement = this.islands[neighbor].getResourceRequirement();
+                    let trips = Math.ceil(resourceRequirement / currentInventory);
+                    let pathDistance = 0;
+                    let path = [];
+
+                    for (let i = 0; i < trips; i++) {
+                        if (i > 0) {
+                            // Return to origin to restock
+                            pathDistance += this.islands[neighbor].neighbors.get(startIsland) * 2;
+                            path.push(startIsland);
+                            currentInventory = 10; // Reset inventory to full after restocking
+                        }
+                        pathDistance += distance;
+                        path.push(neighbor);
+                        currentInventory -= resourceRequirement;
+                    }
+
+                    let result = tsp(neighbor, newVisited, currentInventory);
+
+                    pathDistance += result.distance;
 
                     if (minDistance === null || pathDistance < minDistance) {
                         minDistance = pathDistance;
-                        minPath = [neighbor, ...result.path];
+                        minPath = [...path, ...result.path];
                     }
                 }
             }
@@ -94,8 +120,20 @@ class Graph {
 
         let initialVisited = new Set();
         initialVisited.add(startIsland);
-        let result = tsp(startIsland, initialVisited);
+        let result = tsp(startIsland, initialVisited, 10); // Start with a full inventory of 10 units
         return { distance: result.distance, path: [startIsland, ...result.path] };
+    }
+
+    // Method to distribute resources from multiple origins to all islands
+    distributeResources(resources) {
+        for (let resource in resources) {
+            let origin = resources[resource];
+            let destinations = Object.keys(this.islands).filter(island => island !== origin);
+            let result = this.findShortestPath(origin, destinations, resource);
+            console.log(`Distributing ${resource} from ${origin}:`);
+            console.log(`Shortest path distance: ${result.distance}`);
+            console.log(`Route: ${result.path.join(' -> ')}`);
+        }
     }
 }
 
@@ -105,9 +143,13 @@ let graph = new Graph();
 // Define destinations
 let destinations = ["Hawaii", "Tahiti", "Rapa Nui"];
 
-// Find shortest path starting from Ecuador
-let result = graph.findShortestPath('Ecuador', destinations);
+// Define resources and their origins
+let resources = {
+    'uala': 'Ecuador',
+    'kalo': 'Malaysia',
+    'ulu': 'Papua New Guinea'
+};
 
+// Display Routes
 console.log("Problem 3: Planting Resources");
-console.log("Shortest path distance:", result.distance);
-console.log("Shortest Route Forward and Back:", result.path.join(' -> '));
+graph.distributeResources(resources);
