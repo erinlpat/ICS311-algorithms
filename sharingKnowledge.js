@@ -24,7 +24,7 @@ class SeaOfIslands {
         this.graph[fromIsland].push({node: toIsland, travelTime});
     }
 
-    //function to prioritize islands based on population and last visit time
+    //function to prioritize islands based on population
     prioritizeIslands() {
         let priorityQueue = [];
         for(let islandName in this.islands) {
@@ -40,6 +40,7 @@ class SeaOfIslands {
         return priorityQueue;
     } 
 
+    //finds shortest route from starting island, and ends at the starting island
     findRoute(startIsland) {
       let visited = new Set();
       let route = [startIsland];
@@ -70,7 +71,7 @@ class SeaOfIslands {
         }
     }
 
-    // Add return to start island
+    //return to start island
     let returnRoute = route.concat([startIsland]);
     totalTravelTime += this.graph[currentIsland].find(edge => edge.node === startIsland).travelTime;
 
